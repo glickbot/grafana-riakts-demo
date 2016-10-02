@@ -1,0 +1,2 @@
+- src: http://github.com/basho-labs/ansible-riak
+  version: small-fixes

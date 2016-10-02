@@ -1,0 +1,5 @@
+grafana-riakts-datasource/*
+downloaded/*
+.vagrant/*
+roles/*
+npm-debug.log

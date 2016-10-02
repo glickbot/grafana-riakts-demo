@@ -1,0 +1,79 @@
+- hosts: all
+  become: true
+  become_user: root
+  vars:
+    riak_package: 'riak-ts'
+    riak_backend: leveldb
+    riak_shell_group: 'riak-ts'
+    riak_node_name: riak@{{ ansible_fqdn }}
+    riak_shell_nodes_list: "{{ riak_node_name }}"
+    riak_partition: /dev/sda1
+    riak_tune_disks: true
+    riak_tune_os: true
+    grafana_src: /var/lib/grafana
+    grafana_plugin_src: "{{ grafana_src }}/plugins/grafana-riakts-datasource"
+    grafana_public: /usr/share/grafana/public
+    download_dir: /vagrant/downloaded
+  roles:
+    - { role: ansible-riak }
+  tasks:
+    - name: Creating Directory for Downlaods
+      file: path="{{ download_dir }}" state=directory
+    - name: Installing Repo for Node.JS
+      shell: curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash - creates=/etc/apt/sources.list.d/nodesource.list
+    - name: Installing Packagecloud Key (grafana)
+      shell: curl https://packagecloud.io/gpg.key | sudo apt-key add -
+    - name: Installing Repo for Grafana
+      apt_repository: repo='deb https://packagecloud.io/grafana/stable/debian/ wheezy main' state=present
+    - name: Installing Packages
+      package: name="{{ item }}" state=latest
+      with_items:
+      - nodejs
+      - grafana
+      - build-essential
+      - autoconf
+      - libncurses5-dev
+      - openssl
+      - libssl-dev
+      - fop
+      - xsltproc
+      - unixodbc-dev
+      - git
+    - name: Downloading Basho Erlang OTP SRC
+      get_url: dest="{{ download_dir }}" url=http://s3.amazonaws.com/downloads.basho.com/erlang/otp_src_R16B02-basho10.tar.gz
+    - name: Downloading Riak Explorer Ubuntu Release
+      get_url: dest="{{ download_dir }}" url=https://github.com/basho-labs/riak_explorer/releases/download/1.2.3/riak_explorer-1.2.3-ubuntu-14.04.tar.gz
+    - name: Extracting Basho Erlang OTP SRC
+      command: chdir="{{ download_dir }}" tar xzf otp_src_R16B02-basho10.tar.gz creates=OTP_R16B02_basho10
+    - name: Running otp_build autoconf
+      command: chdir="{{ download_dir }}/OTP_R16B02_basho10" ./otp_build autoconf creates=configure
+    - name: Running configure
+      command: chdir="{{ download_dir }}/OTP_R16B02_basho10" ./configure creates=Makefile
+    - stat: path="{{ download_dir }}/OTP_R16B02_basho10/bin/erlc"
+      register: made_erlc
+    - name: Compiling Erlang
+      make: chdir="{{ download_dir }}/OTP_R16B02_basho10" creates=bin/erlc
+      when: made_erlc.stat.exists == False
+    - stat: path=/usr/local/bin/erl
+      register: installed_erlc
+    - name: Installing Erlang
+      make: chdir="{{ download_dir }}/OTP_R16B02_basho10" target=install
+      when: installed_erlc.stat.exists == False
+    - file: path="{{ grafana_src }}/plugins" state=directory
+    - name: "Extracting Riak Explorer"
+      command: chdir=/var/lib tar xzf {{ download_dir }}/riak_explorer-1.2.3-ubuntu-14.04.tar.gz creates=riak_explorer
+    - name: Configuring Riak Explorer [Riak Node]
+      lineinfile: dest=/var/lib/riak_explorer/etc/riak_explorer.conf regexp="^clusters.default.riak_node =" line="clusters.default.riak_node = {{ riak_node_name }}"
+    - name: Configuring Riak Explorer [Listen Address]
+      lineinfile: dest=/var/lib/riak/explorer/etc/riak_explorer.conf regexp="^listener =" line="listener = 0.0.0.0:9000"
+    - git:
+        repo: /vagrant/grafana-riakts-datasource
+        dest: "{{ grafana_plugin_src }}"
+    - npm: path="{{ grafana_plugin_src }}"
+    - make: chdir="{{ grafana_plugin_src }}/facade"
+    - file: path="{{ grafana_plugin_src }}/{{ item }}" src="{{ grafana_public "}}/{{ item }} state=link
+      with_items:
+      - vendor
+      - test
+      - app
+    - command: chdir="{{ grafana_plugin_src }}" npm run build
