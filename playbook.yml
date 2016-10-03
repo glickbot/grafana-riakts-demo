@@ -81,6 +81,7 @@
     - name: Pinging Riak Explorer
       command: chdir=/var/lib/riak_explorer bin/riak_explorer ping
       register: rex_ping
+      ignore_errors: true
     - name: Starting Riak Explorer
       command: chdir=/var/lib/riak_explorer bin/riak_explorer start
       when: rex_ping.rc != 0
