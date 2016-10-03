@@ -77,3 +77,30 @@
       - test
       - app
     - command: chdir="{{ grafana_plugin_src }}" npm run build
+
+    - name: Pinging Riak Explorer
+      command: chdir=/var/lib/riak_explorer bin/riak_explorer ping
+      register: rex_ping
+    - name: Starting Riak Explorer
+      command: chdir=/var/lib/riak_explorer bin/riak_explorer start
+      when: rex_ping.rc != 0
+    - name: Checking for Running Screens
+      command: screen -ls
+      register: screens
+      ignore_errors: true
+    - name: Start Watcher Screen Session
+      command: chdir="{{ grafana_plugin_src }}" screen -S demo -t watcher -A -d -m
+      when: "'demo' not in screens.stdout"
+    - name: Start Facade Screen Session
+      command: screen -S demo -X screen -t facade
+      when: "'demo' not in screens.stdout"
+    - name: Start Watcher
+      command: screen -S demo -p watcher -X stuff 'npm run watch\n'
+      when: "'demo' not in screens.stdout"
+    - name: Start Facade
+      command: screen -S demo -p facade -X stuff 'npm run facade\n'
+      when: "'demo' not in screens.stdout"
+    - name: Waiting a few seconds
+      pause: seconds=5
+      when: "'demo' not in screens.stdout"
+    - service: name=grafana-server state=started
