@@ -52,7 +52,7 @@
     - stat: path="{{ download_dir }}/OTP_R16B02_basho10/bin/erlc"
       register: made_erlc
     - name: Compiling Erlang
-      make: chdir="{{ download_dir }}/OTP_R16B02_basho10" creates=bin/erlc
+      make: chdir="{{ download_dir }}/OTP_R16B02_basho10"
       when: made_erlc.stat.exists == False
     - stat: path=/usr/local/bin/erl
       register: installed_erlc
@@ -65,13 +65,13 @@
     - name: Configuring Riak Explorer [Riak Node]
       lineinfile: dest=/var/lib/riak_explorer/etc/riak_explorer.conf regexp="^clusters.default.riak_node =" line="clusters.default.riak_node = {{ riak_node_name }}"
     - name: Configuring Riak Explorer [Listen Address]
-      lineinfile: dest=/var/lib/riak/explorer/etc/riak_explorer.conf regexp="^listener =" line="listener = 0.0.0.0:9000"
+      lineinfile: dest=/var/lib/riak_explorer/etc/riak_explorer.conf regexp="^listener =" line="listener = 0.0.0.0:9000"
     - git:
         repo: /vagrant/grafana-riakts-datasource
         dest: "{{ grafana_plugin_src }}"
     - npm: path="{{ grafana_plugin_src }}"
     - make: chdir="{{ grafana_plugin_src }}/facade"
-    - file: path="{{ grafana_plugin_src }}/{{ item }}" src="{{ grafana_public "}}/{{ item }} state=link
+    - file: path="{{ grafana_plugin_src }}/{{ item }}" src="{{ grafana_public }}/{{ item }}" state=link
       with_items:
       - vendor
       - test

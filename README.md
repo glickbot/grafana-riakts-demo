@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/license-apache-blue.svg?style=flat)](https://github.com/glickbot/grafana-riakts-demo/blob/master/LICENSE)
 
+*NOT YET AVAILABLE*
+
 Vagrant Demo for Riak TS + Grafana + Riak Explorer
 
 ## Usage
@@ -9,6 +11,7 @@ Vagrant Demo for Riak TS + Grafana + Riak Explorer
 ### Requirements
 - [Vagrant](https://www.vagrantup.com/)
 - [Ansible 2.0+](https://www.ansible.com/)
+- Riak TS Grafana Datastore
 
 ### Steps
     clone https://github.com/glickbot/grafana-riakts-demo
