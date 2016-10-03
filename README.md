@@ -10,7 +10,7 @@ Vagrant Demo for Riak TS + Grafana + Riak Explorer
 
 ### Requirements
 - [Vagrant](https://www.vagrantup.com/)
-- [Ansible 2.0+](https://www.ansible.com/)
+- [Ansible 2.1+](https://www.ansible.com/)
 - Riak TS Grafana Datasource
 
 ### Steps
